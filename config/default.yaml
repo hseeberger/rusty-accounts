@@ -1,0 +1,7 @@
+api:
+  addr: 0.0.0.0
+  port: 8080
+
+tracing:
+  service-name: rusty-accounts
+  otlp-exporter-endpoint: http://localhost:4317

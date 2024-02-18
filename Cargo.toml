@@ -1,0 +1,33 @@
+[package]
+name          = "rusty-accounts"
+version       = "0.1.0"
+edition       = "2021"
+description   = "Simplistic banking demo built with EventSourced."
+authors       = [ "Heiko Seeberger <git@heikoseeberger.de>" ]
+license-file  = "LICENSE"
+readme        = "README.md"
+homepage      = "https://github.com/hseeberger/rusty-accounts"
+repository    = "https://github.com/hseeberger/rusty-accounts"
+documentation = "https://github.com/hseeberger/rusty-accounts"
+
+[dependencies]
+anyhow                = { version = "1.0", features = [ "backtrace" ] }
+api-version           = { git = "https://github.com/scndcloud/api-version" }
+axum                  = { version = "0.7", features = [ "http2", "json" ] }
+configured            = { version = "0.7" }
+error-ext             = { version = "0.1", features = [ "axum" ] }
+opentelemetry         = { version = "0.21" }
+opentelemetry_sdk     = { version = "0.21", features = [ "rt-tokio" ] }
+opentelemetry-otlp    = { version = "0.14", default-features = false, features = [ "grpc-tonic", "trace" ] }
+serde                 = { version = "1.0", features = [ "derive" ] }
+serde_json            = { version = "1.0" }
+thiserror             = { version = "1.0" }
+time                  = { version = "0.3", features = [ "formatting" ] }
+tokio                 = { version = "1", features = [ "macros", "rt-multi-thread", "signal" ] }
+tower                 = { version = "0.4" }
+tower-http            = { version = "0.5", features = [ "cors", "trace" ] }
+tracing               = { version = "0.1" }
+tracing-opentelemetry = { version = "0.22" }
+tracing-subscriber    = { version = "0.3", features = [ "env-filter", "json" ] }
+utoipa                = { version = "4.1", features = [ "axum_extras" ] }
+utoipa-swagger-ui     = { version = "6.0", features = [ "axum" ] }
