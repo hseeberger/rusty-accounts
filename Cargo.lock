@@ -399,9 +399,9 @@ checksum = "5443807d6dff69373d433ab9ef5378ad8df50ca6298caf15de6e52e24aaf54d5"
 
 [[package]]
 name = "error-ext"
-version = "0.1.1"
+version = "0.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6014aa81f36ffbe8a255856f4866c45d3f6d59e793db1b137a496aecd34b0f6f"
+checksum = "094d31539e071ef8853a9c78ec64e62f4e4e812bba8482af34e37c80b2bffd10"
 dependencies = [
  "axum 0.7.4",
 ]
