@@ -1,19 +1,32 @@
 mod api;
+mod domain;
+mod infra;
+mod util;
 
+use crate::{
+    domain::AccountEntity,
+    infra::{PgAccountEvtHandler, PgAccountRepository},
+    util::PgConfig,
+};
 use anyhow::{Context, Result};
 use configured::Configured;
 use error_ext::StdErrorExt;
+use eventsourced::EventSourced;
+use eventsourced_nats::{NatsEvtLog, NatsEvtLogConfig};
+use eventsourced_projection::postgres::{ErrorStrategy, Projection};
 use opentelemetry::{global, KeyValue};
 use opentelemetry_otlp::WithExportConfig;
 use opentelemetry_sdk::{propagation::TraceContextPropagator, runtime, trace, Resource};
 use serde::Deserialize;
 use serde_json::json;
+use sqlx::postgres::PgPoolOptions;
 use std::{fmt::Display, panic};
 use time::{format_description::well_known::Rfc3339, OffsetDateTime};
 use tracing::{error, info, Subscriber};
 use tracing_subscriber::{
     fmt, layer::SubscriberExt, registry::LookupSpan, util::SubscriberInitExt, EnvFilter, Layer,
 };
+use uuid::Uuid;
 
 #[tokio::main]
 async fn main() -> Result<()> {
@@ -43,6 +56,8 @@ async fn main() -> Result<()> {
 struct Config {
     api: api::Config,
     tracing: TracingConfig,
+    pg_config: PgConfig,
+    evt_log: NatsEvtLogConfig,
 }
 
 #[derive(Debug, Clone, Deserialize)]
@@ -108,5 +123,38 @@ fn log_error(error: &impl Display) {
 async fn run(config: Config) -> Result<()> {
     info!(?config, "starting");
 
-    api::serve(config.api).await
+    // Create DB connection pool.
+    let pool = PgPoolOptions::new()
+        .connect_with(config.pg_config.into())
+        .await
+        .context("create DB connection pool")?;
+
+    // Run DB migrations.
+    sqlx::migrate!().run(&pool).await?;
+
+    // Create account repository.
+    let account_repository = PgAccountRepository::new(pool.clone());
+
+    // Create event log.
+    let evt_log = NatsEvtLog::<Uuid>::new(config.evt_log)
+        .await
+        .context("create NatsEvtLog")?;
+
+    // Run account projection.
+    let account_projection = Projection::new(
+        AccountEntity::TYPE_NAME,
+        "account".to_string(),
+        evt_log.clone(),
+        PgAccountEvtHandler,
+        ErrorStrategy::Stop,
+        pool,
+    )
+    .await
+    .context("create account projection")?;
+    account_projection
+        .run()
+        .await
+        .context("run account projection")?;
+
+    api::serve(config.api, account_repository, evt_log).await
 }

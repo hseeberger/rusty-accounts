@@ -1,5 +1,6 @@
 mod v0;
 
+use crate::domain::AccountRepository;
 use anyhow::{Context, Result};
 use api_version::api_version;
 use axum::{
@@ -8,6 +9,7 @@ use axum::{
     routing::get,
     Router, ServiceExt,
 };
+use eventsourced::evt_log::EvtLog;
 use opentelemetry::{global, propagation::Extractor, trace::TraceContextExt};
 use serde::Deserialize;
 use std::{convert::Infallible, net::IpAddr};
@@ -21,6 +23,7 @@ use tracing::{field, info_span, warn, Span};
 use tracing_opentelemetry::OpenTelemetrySpanExt;
 use utoipa::OpenApi;
 use utoipa_swagger_ui::SwaggerUi;
+use uuid::Uuid;
 
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "kebab-case")]
@@ -33,10 +36,17 @@ pub struct Config {
 #[openapi()]
 pub struct ApiDoc;
 
-pub async fn serve(config: Config) -> Result<()> {
+pub async fn serve<R, E>(config: Config, account_repository: R, evt_log: E) -> Result<()>
+where
+    R: AccountRepository,
+    E: EvtLog<Id = Uuid> + Sync,
+{
     let Config { addr, port } = config;
 
-    let app_state = AppState {};
+    let app_state = AppState {
+        account_repository,
+        evt_log,
+    };
 
     let mut api_doc = ApiDoc::openapi();
     api_doc.merge(v0::ApiDoc::openapi());
@@ -65,24 +75,21 @@ pub async fn serve(config: Config) -> Result<()> {
 }
 
 #[derive(Clone)]
-struct AppState {}
+struct AppState<R, E> {
+    account_repository: R,
+    evt_log: E,
+}
 
 #[derive(Clone)]
 struct ApiVersionFilter;
-
-impl ApiVersionFilter {
-    const NO_REWRITE: [&'static str; 3] = ["/", "/api-doc", "/openapi.json"];
-}
 
 impl api_version::ApiVersionFilter for ApiVersionFilter {
     type Error = Infallible;
 
     async fn filter(&self, uri: &Uri) -> Result<bool, Self::Error> {
         let path = uri.path();
-        let rewrite = !ApiVersionFilter::NO_REWRITE
-            .iter()
-            .any(|s| path.starts_with(s));
-        Ok(rewrite)
+        let no_rewrite = (path == "/") || path.starts_with("/api-doc") || path == "/openapi.json";
+        Ok(!no_rewrite)
     }
 }
 

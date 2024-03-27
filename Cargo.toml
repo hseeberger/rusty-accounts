@@ -11,23 +11,44 @@ repository    = "https://github.com/hseeberger/rusty-accounts"
 documentation = "https://github.com/hseeberger/rusty-accounts"
 
 [dependencies]
-anyhow                = { version = "1.0", features = [ "backtrace" ] }
-api-version           = { git = "https://github.com/scndcloud/api-version" }
-axum                  = { version = "0.7", features = [ "http2", "json" ] }
-configured            = { version = "0.7" }
-error-ext             = { version = "0.2", features = [ "axum" ] }
-opentelemetry         = { version = "0.21" }
-opentelemetry_sdk     = { version = "0.21", features = [ "rt-tokio" ] }
-opentelemetry-otlp    = { version = "0.14", default-features = false, features = [ "grpc-tonic", "trace" ] }
-serde                 = { version = "1.0", features = [ "derive" ] }
-serde_json            = { version = "1.0" }
-thiserror             = { version = "1.0" }
-time                  = { version = "0.3", features = [ "formatting" ] }
-tokio                 = { version = "1", features = [ "macros", "rt-multi-thread", "signal" ] }
-tower                 = { version = "0.4" }
-tower-http            = { version = "0.5", features = [ "cors", "trace" ] }
-tracing               = { version = "0.1" }
-tracing-opentelemetry = { version = "0.22" }
-tracing-subscriber    = { version = "0.3", features = [ "env-filter", "json" ] }
-utoipa                = { version = "4.1", features = [ "axum_extras" ] }
-utoipa-swagger-ui     = { version = "6.0", features = [ "axum" ] }
+anyhow                  = { version = "1.0" }
+api-version             = { git = "https://github.com/scndcloud/api-version" }
+axum                    = { version = "0.7", features = [ "http2", "json" ] }
+configured              = { version = "0.7" }
+error-ext               = { version = "0.2", features = [ "axum" ] }
+eventsourced            = { version = "0.23", features = [ "serde_json" ] }
+eventsourced-nats       = { version = "0.14" }
+eventsourced-projection = { version = "0.5" }
+futures                 = { version = "0.3" }
+opentelemetry           = { version = "0.22" }
+opentelemetry_sdk       = { version = "0.22", features = [ "rt-tokio" ] }
+opentelemetry-otlp      = { version = "0.15", default-features = false, features = [ "grpc-tonic", "trace" ] }
+secrecy                 = { version = "0.8", features = [ "serde" ] }
+serde                   = { version = "1.0", features = [ "derive" ] }
+serde_json              = { version = "1.0" }
+serde_with              = { version = "3.7" }
+sqlx                    = { version = "0.7", features = [ "migrate", "postgres", "runtime-tokio", "uuid" ] }
+thiserror               = { version = "1.0" }
+time                    = { version = "0.3", features = [ "formatting" ] }
+tokio                   = { version = "1", features = [ "macros", "rt-multi-thread", "signal" ] }
+tower                   = { version = "0.4" }
+tower-http              = { version = "0.5", features = [ "cors", "trace" ] }
+tracing                 = { version = "0.1" }
+tracing-opentelemetry   = { version = "0.23" }
+tracing-subscriber      = { version = "0.3", features = [ "env-filter", "json" ] }
+trait-variant           = { version = "0.1" }
+utoipa                  = { version = "4.1", features = [ "axum_extras" ] }
+utoipa-swagger-ui       = { version = "6.0", features = [ "axum" ] }
+uuid                    = { version = "1.8", features = [ "serde", "v7" ] }
+
+[dev-dependencies]
+assert_matches         = { version = "1.5" }
+eventsourced           = { version = "0.23", features = [ "test" ] }
+testcontainers         = { version = "0.15" }
+testcontainers-modules = { version = "0.3", features = [ "postgres" ] }
+tracing-test           = { version = "0.2" } # features = [ "no-env-filter" ]
+
+[patch.crates-io]
+eventsourced            = { git = "https://github.com/hseeberger/eventsourced", branch = "feat/reply-with-id-evt" }
+eventsourced-nats       = { git = "https://github.com/hseeberger/eventsourced", branch = "feat/reply-with-id-evt" }
+eventsourced-projection = { git = "https://github.com/hseeberger/eventsourced", branch = "feat/reply-with-id-evt" }

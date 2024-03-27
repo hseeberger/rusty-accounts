@@ -5,3 +5,15 @@ api:
 tracing:
   service-name: rusty-accounts
   otlp-exporter-endpoint: http://localhost:4317
+
+pg-config:
+  host: localhost
+  port: 5432
+  user: rusty-accounts
+  password: rusty-accounts
+  dbname: rusty-accounts
+  sslmode: prefer
+
+evt-log:
+  server-addr: localhost:4222
+  setup: true

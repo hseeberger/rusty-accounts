@@ -21,6 +21,7 @@ fix:
 all: check fmt lint test
 
 run port="8080":
+	docker-compose up -d
 	RUST_LOG=rusty_bank=debug,info \
 		APP__API__PORT={{port}} \
 		cargo run -p rusty-accounts
