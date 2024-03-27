@@ -749,14 +749,9 @@ dependencies = [
 
 [[package]]
 name = "error-ext"
-version = "0.1.1"
+version = "0.2.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6014aa81f36ffbe8a255856f4866c45d3f6d59e793db1b137a496aecd34b0f6f"
-
-[[package]]
-name = "error-ext"
-version = "0.2.0"
-source = "git+https://github.com/hseeberger/error-ext?branch=feat/error-to-schema#514dce4d64f09a3e4fbd388248c2cfb1afea14fb"
+checksum = "37851f6c81ce82bb26372993f4a5835a5a3bf0f06285afbb95a710e3dd0c323f"
 dependencies = [
  "axum 0.7.5",
  "utoipa",
@@ -782,10 +777,10 @@ checksum = "0206175f82b8d6bf6652ff7d71a1e27fd2e4efde587fd368662814d6ec1d9ce0"
 [[package]]
 name = "eventsourced"
 version = "0.23.0"
-source = "git+https://github.com/hseeberger/eventsourced?branch=feat/reply-with-id-evt#6550504c8a13e427eaca4dfd3a814fb23348ac63"
+source = "git+https://github.com/hseeberger/eventsourced?branch=feat/reply-with-id-evt#83d4fecf87d9c3de2c428a2c3c19ab18a31a5b01"
 dependencies = [
  "bytes",
- "error-ext 0.1.1",
+ "error-ext",
  "futures",
  "pin-project",
  "serde",
@@ -799,12 +794,12 @@ dependencies = [
 [[package]]
 name = "eventsourced-nats"
 version = "0.14.2"
-source = "git+https://github.com/hseeberger/eventsourced?branch=feat/reply-with-id-evt#6550504c8a13e427eaca4dfd3a814fb23348ac63"
+source = "git+https://github.com/hseeberger/eventsourced?branch=feat/reply-with-id-evt#83d4fecf87d9c3de2c428a2c3c19ab18a31a5b01"
 dependencies = [
  "anyhow",
  "async-nats",
  "bytes",
- "error-ext 0.1.1",
+ "error-ext",
  "eventsourced",
  "futures",
  "prost",
@@ -819,10 +814,10 @@ dependencies = [
 [[package]]
 name = "eventsourced-projection"
 version = "0.5.0"
-source = "git+https://github.com/hseeberger/eventsourced?branch=feat/reply-with-id-evt#6550504c8a13e427eaca4dfd3a814fb23348ac63"
+source = "git+https://github.com/hseeberger/eventsourced?branch=feat/reply-with-id-evt#83d4fecf87d9c3de2c428a2c3c19ab18a31a5b01"
 dependencies = [
  "bytes",
- "error-ext 0.1.1",
+ "error-ext",
  "eventsourced",
  "futures",
  "serde",
@@ -2311,9 +2306,9 @@ dependencies = [
 
 [[package]]
 name = "rustls-pki-types"
-version = "1.4.0"
+version = "1.4.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "868e20fada228fefaf6b652e00cc73623d54f8171e7352c18bb281571f2d92da"
+checksum = "ecd36cc4259e3e4514335c4a138c6b43171a8d61d8f5c9348f9fc7529416f247"
 
 [[package]]
 name = "rustls-webpki"
@@ -2341,7 +2336,7 @@ dependencies = [
  "assert_matches",
  "axum 0.7.5",
  "configured",
- "error-ext 0.2.0",
+ "error-ext",
  "eventsourced",
  "eventsourced-nats",
  "eventsourced-projection",

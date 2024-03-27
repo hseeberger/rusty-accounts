@@ -49,7 +49,6 @@ testcontainers-modules = { version = "0.3", features = [ "postgres" ] }
 tracing-test           = { version = "0.2" } # features = [ "no-env-filter" ]
 
 [patch.crates-io]
-error-ext               = { git = "https://github.com/hseeberger/error-ext", branch = "feat/error-to-schema" }
 eventsourced            = { git = "https://github.com/hseeberger/eventsourced", branch = "feat/reply-with-id-evt" }
 eventsourced-nats       = { git = "https://github.com/hseeberger/eventsourced", branch = "feat/reply-with-id-evt" }
 eventsourced-projection = { git = "https://github.com/hseeberger/eventsourced", branch = "feat/reply-with-id-evt" }
