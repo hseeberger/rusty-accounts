@@ -26,7 +26,7 @@ use uuid::Uuid;
 #[derive(OpenApi)]
 #[openapi(
     paths(list_accounts, create_accounts, deposit, withdraw),
-    components(schemas(ListAccountsResponse, Account, DepositRequest, WithdrawRequest))
+    components(schemas(Error, ListAccountsResponse, Account, DepositRequest, WithdrawRequest))
 )]
 pub struct ApiDoc;
 
@@ -120,7 +120,7 @@ struct DepositRequest {
     amount: u64,
 }
 
-/// Create an account.
+/// Creates a deposit.
 #[utoipa::path(
     post,
     path = "/accounts/{id}/deposits",
@@ -162,7 +162,7 @@ struct WithdrawRequest {
     amount: u64,
 }
 
-/// Create an account.
+/// Creates a withdrawal.
 #[utoipa::path(
     post,
     path = "/accounts/{id}/withdrawals",

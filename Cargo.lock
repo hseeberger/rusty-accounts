@@ -756,10 +756,10 @@ checksum = "6014aa81f36ffbe8a255856f4866c45d3f6d59e793db1b137a496aecd34b0f6f"
 [[package]]
 name = "error-ext"
 version = "0.2.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "094d31539e071ef8853a9c78ec64e62f4e4e812bba8482af34e37c80b2bffd10"
+source = "git+https://github.com/hseeberger/error-ext?branch=feat/error-to-schema#514dce4d64f09a3e4fbd388248c2cfb1afea14fb"
 dependencies = [
  "axum 0.7.5",
+ "utoipa",
 ]
 
 [[package]]
@@ -3461,6 +3461,7 @@ dependencies = [
  "quote",
  "regex",
  "syn 2.0.55",
+ "uuid",
 ]
 
 [[package]]

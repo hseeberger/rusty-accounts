@@ -15,7 +15,7 @@ anyhow                  = { version = "1.0" }
 api-version             = { git = "https://github.com/scndcloud/api-version" }
 axum                    = { version = "0.7", features = [ "http2", "json" ] }
 configured              = { version = "0.7" }
-error-ext               = { version = "0.2", features = [ "axum" ] }
+error-ext               = { version = "0.2", features = [ "axum", "utoipa" ] }
 eventsourced            = { version = "0.23", features = [ "serde_json" ] }
 eventsourced-nats       = { version = "0.14" }
 eventsourced-projection = { version = "0.5" }
@@ -37,7 +37,7 @@ tracing                 = { version = "0.1" }
 tracing-opentelemetry   = { version = "0.23" }
 tracing-subscriber      = { version = "0.3", features = [ "env-filter", "json" ] }
 trait-variant           = { version = "0.1" }
-utoipa                  = { version = "4.1", features = [ "axum_extras" ] }
+utoipa                  = { version = "4.1", features = [ "axum_extras", "uuid" ] }
 utoipa-swagger-ui       = { version = "6.0", features = [ "axum" ] }
 uuid                    = { version = "1.8", features = [ "serde", "v7" ] }
 
@@ -49,6 +49,7 @@ testcontainers-modules = { version = "0.3", features = [ "postgres" ] }
 tracing-test           = { version = "0.2" } # features = [ "no-env-filter" ]
 
 [patch.crates-io]
+error-ext               = { git = "https://github.com/hseeberger/error-ext", branch = "feat/error-to-schema" }
 eventsourced            = { git = "https://github.com/hseeberger/eventsourced", branch = "feat/reply-with-id-evt" }
 eventsourced-nats       = { git = "https://github.com/hseeberger/eventsourced", branch = "feat/reply-with-id-evt" }
 eventsourced-projection = { git = "https://github.com/hseeberger/eventsourced", branch = "feat/reply-with-id-evt" }
