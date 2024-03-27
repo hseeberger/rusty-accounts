@@ -70,6 +70,11 @@ jobs:
         with:
           toolchain: ${{needs.toolchain.outputs.toolchain}}
 
+      - name: Install protoc
+        uses: arduino/setup-protoc@v3
+        with:
+          repo-token: ${{secrets.GITHUB_TOKEN}}
+
       - uses: Swatinem/rust-cache@v2
 
       - name: just check
@@ -111,11 +116,17 @@ jobs:
         uses: taiki-e/install-action@v2
         with:
           tool: just
+
       - name: Install Rust
         uses: dtolnay/rust-toolchain@master
         with:
           toolchain: ${{needs.toolchain.outputs.toolchain}}
           components: clippy
+
+      - name: Install protoc
+        uses: arduino/setup-protoc@v3
+        with:
+          repo-token: ${{secrets.GITHUB_TOKEN}}
 
       - uses: Swatinem/rust-cache@v2
 
@@ -139,6 +150,11 @@ jobs:
         uses: dtolnay/rust-toolchain@master
         with:
           toolchain: ${{needs.toolchain.outputs.toolchain}}
+
+      - name: Install protoc
+        uses: arduino/setup-protoc@v3
+        with:
+          repo-token: ${{secrets.GITHUB_TOKEN}}
 
       - uses: Swatinem/rust-cache@v2
 
