@@ -776,8 +776,9 @@ checksum = "0206175f82b8d6bf6652ff7d71a1e27fd2e4efde587fd368662814d6ec1d9ce0"
 
 [[package]]
 name = "eventsourced"
-version = "0.23.0"
-source = "git+https://github.com/hseeberger/eventsourced?branch=feat/reply-with-id-evt#83d4fecf87d9c3de2c428a2c3c19ab18a31a5b01"
+version = "0.24.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "6091b892b72ad19d7c281ccd1a4fc258b44b8f5f111c3c94dbe1593a5082f25b"
 dependencies = [
  "bytes",
  "error-ext",
@@ -793,8 +794,9 @@ dependencies = [
 
 [[package]]
 name = "eventsourced-nats"
-version = "0.14.2"
-source = "git+https://github.com/hseeberger/eventsourced?branch=feat/reply-with-id-evt#83d4fecf87d9c3de2c428a2c3c19ab18a31a5b01"
+version = "0.14.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "136b67ddebd0c4ee18bead3a0774c450ea94d3115331f63150403c9104c82fd7"
 dependencies = [
  "anyhow",
  "async-nats",
@@ -813,8 +815,9 @@ dependencies = [
 
 [[package]]
 name = "eventsourced-projection"
-version = "0.5.0"
-source = "git+https://github.com/hseeberger/eventsourced?branch=feat/reply-with-id-evt#83d4fecf87d9c3de2c428a2c3c19ab18a31a5b01"
+version = "0.5.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "6b89e7c89fc31f125535040251405310e2f1f655d26d6e7cccabeaadbc192110"
 dependencies = [
  "bytes",
  "error-ext",
