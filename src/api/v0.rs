@@ -1,15 +1,23 @@
 use crate::{
     api::AppState,
-    domain::{Account, AccountEntity, AccountRepository, CreateAccount, CreateAccountError},
+    domain::{
+        Account, AccountEntity, AccountRepository, CreateAccount, CreateAccountError, Deposit,
+        DepositError, Withdraw, WithdrawError,
+    },
 };
-use axum::{extract::State, routing::get, Json, Router};
+use axum::{
+    extract::{Path, State},
+    http::StatusCode,
+    routing::{get, post},
+    Json, Router,
+};
 use error_ext::{axum::Error, StdErrorExt};
 use eventsourced::{
     binarize::serde_json::SerdeJsonBinarize, evt_log::EvtLog,
-    snapshot_store::noop::NoopSnapshotStore, EventSourcedExt,
+    snapshot_store::noop::NoopSnapshotStore, EntityRef, EventSourcedExt,
 };
 use futures::TryStreamExt;
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 use std::num::NonZeroUsize;
 use tracing::{error, instrument};
 use utoipa::{OpenApi, ToSchema};
@@ -17,8 +25,8 @@ use uuid::Uuid;
 
 #[derive(OpenApi)]
 #[openapi(
-    paths(list_accounts, create_accounts),
-    components(schemas(ListAccountsResponse, Account))
+    paths(list_accounts, create_accounts, deposit, withdraw),
+    components(schemas(ListAccountsResponse, Account, DepositRequest, WithdrawRequest))
 )]
 pub struct ApiDoc;
 
@@ -27,7 +35,10 @@ where
     R: AccountRepository,
     E: EvtLog<Id = Uuid> + Sync,
 {
-    Router::new().route("/accounts", get(list_accounts).post(create_accounts))
+    Router::new()
+        .route("/accounts", get(list_accounts).post(create_accounts))
+        .route("/accounts/:id/deposits", post(deposit))
+        .route("/accounts/:id/withdrawals", post(withdraw))
 }
 
 #[derive(Debug, Serialize, ToSchema)]
@@ -74,7 +85,7 @@ where
     post,
     path = "/accounts",
     responses(
-        (status = 200, description = "The created account", body = Account),
+        (status = 201, description = "The created account", body = Account),
         (status = 409, description = "An account with the created ID already exists", body = Error),
     ),
     tag = "account",
@@ -82,57 +93,132 @@ where
 #[instrument(skip(app_state))]
 async fn create_accounts<R, L>(
     State(app_state): State<AppState<R, L>>,
+) -> Result<(StatusCode, Json<Account>), Error>
+where
+    R: AccountRepository,
+    L: EvtLog<Id = Uuid>,
+{
+    let account = spawn_account_entity(Uuid::now_v7(), app_state.evt_log.clone()).await?;
+    account
+        .handle_cmd(CreateAccount)
+        .await
+        .map_err(|error| {
+            error!(
+                error = error.as_chain(),
+                "cannot handle CreateAccount command"
+            );
+            Error::Internal
+        })?
+        .map_err(|error| match error {
+            CreateAccountError::AlreadyExisting(_) => Error::conflict(error),
+        })
+        .map(|account| (StatusCode::CREATED, Json(account)))
+}
+
+#[derive(Debug, Deserialize, ToSchema)]
+struct DepositRequest {
+    amount: u64,
+}
+
+/// Create an account.
+#[utoipa::path(
+    post,
+    path = "/accounts/{id}/deposits",
+    responses(
+        (status = 200, description = "The updated account", body = Account),
+        (status = 404, description = "An account with the given ID cannot be found", body = Error),
+    ),
+    tag = "account",
+)]
+#[instrument(skip(app_state))]
+async fn deposit<R, L>(
+    State(app_state): State<AppState<R, L>>,
+    Path(id): Path<Uuid>,
+    Json(DepositRequest { amount }): Json<DepositRequest>,
 ) -> Result<Json<Account>, Error>
 where
     R: AccountRepository,
     L: EvtLog<Id = Uuid>,
 {
-    let id = Uuid::now_v7();
+    let account = spawn_account_entity(id, app_state.evt_log.clone()).await?;
+    account
+        .handle_cmd(Deposit::from(amount))
+        .await
+        .map_err(|error| {
+            error!(
+                error = error.as_chain(),
+                "cannot handle CreateAccount command"
+            );
+            Error::Internal
+        })?
+        .map_err(|error| match error {
+            DepositError::NotFound(_) => Error::not_found(error),
+        })
+        .map(Json)
+}
 
-    let entity = AccountEntity::default()
+#[derive(Debug, Deserialize, ToSchema)]
+struct WithdrawRequest {
+    amount: u64,
+}
+
+/// Create an account.
+#[utoipa::path(
+    post,
+    path = "/accounts/{id}/withdrawals",
+    responses(
+        (status = 200, description = "The updated account", body = Account),
+        (status = 404, description = "An account with the given ID cannot be found", body = Error),
+        (status = 422, description = "An account with the given ID cannot be found", body = Error),
+    ),
+    tag = "account",
+)]
+#[instrument(skip(app_state))]
+async fn withdraw<R, L>(
+    State(app_state): State<AppState<R, L>>,
+    Path(id): Path<Uuid>,
+    Json(WithdrawRequest { amount }): Json<WithdrawRequest>,
+) -> Result<Json<Account>, Error>
+where
+    R: AccountRepository,
+    L: EvtLog<Id = Uuid>,
+{
+    let account = spawn_account_entity(id, app_state.evt_log.clone()).await?;
+    account
+        .handle_cmd(Withdraw::from(amount))
+        .await
+        .map_err(|error| {
+            error!(
+                error = error.as_chain(),
+                "cannot handle CreateAccount command"
+            );
+            Error::Internal
+        })?
+        .map_err(|error| match error {
+            WithdrawError::NotFound(_) => Error::not_found(error),
+            WithdrawError::InsufficientBalance(_) => Error::invalid_entity(error),
+        })
+        .map(Json)
+}
+
+// In the real-world, entities would be cached.
+async fn spawn_account_entity<L>(id: Uuid, evt_log: L) -> Result<EntityRef<AccountEntity>, Error>
+where
+    L: EvtLog<Id = Uuid>,
+{
+    AccountEntity::default()
         .entity()
         .spawn(
             id,
             None,
             NonZeroUsize::MIN,
-            app_state.evt_log.clone(),
+            evt_log,
             NoopSnapshotStore::default(),
             SerdeJsonBinarize,
         )
         .await
         .map_err(|error| {
-            error!(error = error.as_chain(), "cannot create AccountEntity");
+            error!(error = error.as_chain(), "cannot spawn AccountEntity");
             Error::Internal
-        })?;
-
-    let reply = entity.handle_cmd(CreateAccount).await.map_err(|error| {
-        error!(
-            error = error.as_chain(),
-            "cannot handle CreateAccount command"
-        );
-
-        Error::Internal
-    })?;
-
-    reply
-        .map_err(|error| match error {
-            CreateAccountError::AlreadyExisting(_) => Error::conflict(error),
         })
-        .map(Json)
 }
-
-// #[derive(Debug, Deserialize, ToSchema)]
-// struct DepositRequest {
-//     amount: u64,
-// }
-
-// async fn deposit<R>(
-//     State(app_state): State<AppState<R>>,
-//     id: Uuid,
-//     Json(DepositRequest { amount }): Json<DepositRequest>,
-// ) -> Result<Json<ListAccountsResponse>, Error>
-// where
-//     R: AccountRepository,
-// {
-//     todo!()
-// }

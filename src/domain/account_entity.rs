@@ -87,6 +87,12 @@ pub struct Deposit {
     amount: u64,
 }
 
+impl From<u64> for Deposit {
+    fn from(amount: u64) -> Self {
+        Self { amount }
+    }
+}
+
 impl Cmd<AccountEntity> for Deposit {
     type Reply = Account;
     type Error = DepositError;
@@ -126,6 +132,12 @@ pub enum DepositError {
 #[derive(Debug)]
 pub struct Withdraw {
     amount: u64,
+}
+
+impl From<u64> for Withdraw {
+    fn from(amount: u64) -> Self {
+        Self { amount }
+    }
 }
 
 impl Cmd<AccountEntity> for Withdraw {
