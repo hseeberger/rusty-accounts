@@ -1,6 +1,6 @@
 # ---------- BUILD STAGE ---------- #
 
-FROM rust:1.76.0-bookworm AS builder
+FROM rust:1.77.2-bookworm AS builder
 
 # Pass build arguments and set environment variables.
 ARG PROFILE=release
