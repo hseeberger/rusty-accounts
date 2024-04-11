@@ -793,6 +793,24 @@ dependencies = [
 ]
 
 [[package]]
+name = "eventsourced"
+version = "0.25.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "d12533aa73dd2c673eca5a32c463b65c9610a32b4db3f43a8d25791b616e1573"
+dependencies = [
+ "bytes",
+ "error-ext",
+ "futures",
+ "pin-project",
+ "serde",
+ "serde_json",
+ "thiserror",
+ "tokio",
+ "tracing",
+ "trait-variant",
+]
+
+[[package]]
 name = "eventsourced-nats"
 version = "0.14.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -802,7 +820,7 @@ dependencies = [
  "async-nats",
  "bytes",
  "error-ext",
- "eventsourced",
+ "eventsourced 0.24.0",
  "futures",
  "prost",
  "prost-build",
@@ -815,13 +833,13 @@ dependencies = [
 
 [[package]]
 name = "eventsourced-projection"
-version = "0.5.1"
+version = "0.5.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6b89e7c89fc31f125535040251405310e2f1f655d26d6e7cccabeaadbc192110"
+checksum = "368ef4370302d76a0956437824c0b4e8f6348679c86767050bd8a141bcfc5047"
 dependencies = [
  "bytes",
  "error-ext",
- "eventsourced",
+ "eventsourced 0.25.0",
  "futures",
  "serde",
  "serde_json",
@@ -2340,7 +2358,7 @@ dependencies = [
  "axum 0.7.5",
  "configured",
  "error-ext",
- "eventsourced",
+ "eventsourced 0.24.0",
  "eventsourced-nats",
  "eventsourced-projection",
  "futures",
