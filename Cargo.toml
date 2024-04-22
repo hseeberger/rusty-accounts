@@ -17,7 +17,7 @@ axum                    = { version = "0.7", features = [ "http2", "json" ] }
 configured              = { version = "0.7" }
 error-ext               = { version = "0.2", features = [ "axum", "utoipa" ] }
 eventsourced            = { version = "0.25", features = [ "serde_json" ] }
-eventsourced-nats       = { version = "0.14" }
+eventsourced-nats       = { version = "0.15" }
 eventsourced-projection = { version = "0.5" }
 futures                 = { version = "0.3" }
 opentelemetry           = { version = "0.22" }
