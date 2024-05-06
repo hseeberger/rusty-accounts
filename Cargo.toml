@@ -38,7 +38,7 @@ tracing-opentelemetry   = { version = "0.23" }
 tracing-subscriber      = { version = "0.3", features = [ "env-filter", "json" ] }
 trait-variant           = { version = "0.1" }
 utoipa                  = { version = "4.1", features = [ "axum_extras", "uuid" ] }
-utoipa-swagger-ui       = { version = "6.0", features = [ "axum" ] }
+utoipa-swagger-ui       = { version = "7.0", features = [ "axum" ] }
 uuid                    = { version = "1.8", features = [ "serde", "v7" ] }
 
 [dev-dependencies]
