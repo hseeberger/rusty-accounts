@@ -3433,9 +3433,9 @@ checksum = "daf8dba3b7eb870caf1ddeed7bc9d2a049f3cfdfae7cb521b087cc33ae4c49da"
 
 [[package]]
 name = "utoipa"
-version = "4.2.0"
+version = "4.2.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "272ebdfbc99111033031d2f10e018836056e4d2c8e2acda76450ec7974269fa7"
+checksum = "e95b8d4503ee98939fb7024f6da083f7c48ff033cc3cba7521360e1bc6c1470b"
 dependencies = [
  "indexmap 2.2.6",
  "serde",
