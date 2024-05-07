@@ -16,7 +16,7 @@ api-version             = { git = "https://github.com/scndcloud/api-version" }
 axum                    = { version = "0.7", features = [ "http2", "json" ] }
 configured              = { version = "0.7" }
 error-ext               = { version = "0.2", features = [ "axum", "utoipa" ] }
-eventsourced            = { version = "0.25", features = [ "serde_json" ] }
+eventsourced            = { version = "0.27", features = [ "serde_json" ] }
 eventsourced-nats       = { version = "0.14" }
 eventsourced-projection = { version = "0.5" }
 futures                 = { version = "0.3" }
@@ -43,7 +43,7 @@ uuid                    = { version = "1.8", features = [ "serde", "v7" ] }
 
 [dev-dependencies]
 assert_matches         = { version = "1.5" }
-eventsourced           = { version = "0.25", features = [ "test" ] }
+eventsourced           = { version = "0.27", features = [ "test" ] }
 testcontainers         = { version = "0.15" }
 testcontainers-modules = { version = "0.3", features = [ "postgres" ] }
 tracing-test           = { version = "0.2" } # features = [ "no-env-filter" ]
