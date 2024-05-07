@@ -1,5 +1,5 @@
 use crate::domain::account::Account;
-use eventsourced::{Cmd, CmdEffect, EventSourced};
+use eventsourced::{Command, CommandEffect, EventSourced};
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
 use uuid::Uuid;
@@ -16,31 +16,35 @@ pub enum AccountEntity {
 
 impl EventSourced for AccountEntity {
     type Id = Uuid;
-    type Evt = AccountEvt;
+    type Event = AccountEvent;
 
     const TYPE_NAME: &'static str = "account";
 
-    fn handle_evt(self, evt: Self::Evt) -> Self {
+    fn handle_event(self, event: Self::Event) -> Self {
         match self {
-            AccountEntity::Nonexistent => match evt {
-                AccountEvt::Created { .. } => AccountEntity::Existing { balance: 0 },
-                AccountEvt::Deposited { .. } => panic!("invalid event {evt:?} in state Deleted"),
-                AccountEvt::Withdrawn { .. } => panic!("invalid event {evt:?} in state Deleted"),
+            AccountEntity::Nonexistent => match event {
+                AccountEvent::Created { .. } => AccountEntity::Existing { balance: 0 },
+                AccountEvent::Deposited { .. } => {
+                    panic!("invalid event {event:?} in state Deleted")
+                }
+                AccountEvent::Withdrawn { .. } => {
+                    panic!("invalid event {event:?} in state Deleted")
+                }
             },
 
-            AccountEntity::Existing { .. } => match evt {
-                AccountEvt::Created { .. } => panic!("invalid event {evt:?} in state Deleted"),
+            AccountEntity::Existing { .. } => match event {
+                AccountEvent::Created { .. } => panic!("invalid event {event:?} in state Deleted"),
 
-                AccountEvt::Deposited { balance, .. } => AccountEntity::Existing { balance },
+                AccountEvent::Deposited { balance, .. } => AccountEntity::Existing { balance },
 
-                AccountEvt::Withdrawn { balance, .. } => AccountEntity::Existing { balance },
+                AccountEvent::Withdrawn { balance, .. } => AccountEntity::Existing { balance },
             },
         }
     }
 }
 
 #[derive(Debug, Serialize, Deserialize)]
-pub enum AccountEvt {
+pub enum AccountEvent {
     Created { id: Uuid },
     Deposited { id: Uuid, amount: u64, balance: u64 },
     Withdrawn { id: Uuid, amount: u64, balance: u64 },
@@ -51,25 +55,25 @@ pub enum AccountEvt {
 #[derive(Debug)]
 pub struct CreateAccount;
 
-impl Cmd<AccountEntity> for CreateAccount {
+impl Command<AccountEntity> for CreateAccount {
     type Reply = Account;
     type Error = CreateAccountError;
 
-    fn handle_cmd(
+    fn handle_command(
         self,
         id: &Uuid,
         state: &AccountEntity,
-    ) -> CmdEffect<AccountEntity, Self::Reply, Self::Error> {
+    ) -> CommandEffect<AccountEntity, Self::Reply, Self::Error> {
         let id = *id;
 
         match state {
             AccountEntity::Nonexistent => {
-                let evt = AccountEvt::Created { id };
-                CmdEffect::emit_and_reply(evt, move |_| Account { id, balance: 0 })
+                let event = AccountEvent::Created { id };
+                CommandEffect::emit_and_reply(event, move |_| Account { id, balance: 0 })
             }
 
             AccountEntity::Existing { .. } => {
-                CmdEffect::reject(CreateAccountError::AlreadyExisting(id))
+                CommandEffect::reject(CreateAccountError::AlreadyExisting(id))
             }
         }
     }
@@ -94,28 +98,28 @@ impl From<u64> for Deposit {
     }
 }
 
-impl Cmd<AccountEntity> for Deposit {
+impl Command<AccountEntity> for Deposit {
     type Reply = Account;
     type Error = DepositError;
 
-    fn handle_cmd(
+    fn handle_command(
         self,
         id: &Uuid,
         state: &AccountEntity,
-    ) -> CmdEffect<AccountEntity, Self::Reply, Self::Error> {
+    ) -> CommandEffect<AccountEntity, Self::Reply, Self::Error> {
         let id = *id;
 
         match state {
-            AccountEntity::Nonexistent => CmdEffect::reject(DepositError::NotFound(id)),
+            AccountEntity::Nonexistent => CommandEffect::reject(DepositError::NotFound(id)),
 
             AccountEntity::Existing { balance } => {
-                let evt = AccountEvt::Deposited {
+                let event = AccountEvent::Deposited {
                     id,
                     amount: self.amount,
                     balance: balance + self.amount,
                 };
 
-                CmdEffect::emit_and_reply(evt, move |state| match state {
+                CommandEffect::emit_and_reply(event, move |state| match state {
                     AccountEntity::Nonexistent => {
                         panic!("invalid command Deposit in state Nonexistent")
                     }
@@ -149,31 +153,31 @@ impl From<u64> for Withdraw {
     }
 }
 
-impl Cmd<AccountEntity> for Withdraw {
+impl Command<AccountEntity> for Withdraw {
     type Reply = Account;
     type Error = WithdrawError;
 
-    fn handle_cmd(
+    fn handle_command(
         self,
         id: &Uuid,
         state: &AccountEntity,
-    ) -> CmdEffect<AccountEntity, Self::Reply, Self::Error> {
+    ) -> CommandEffect<AccountEntity, Self::Reply, Self::Error> {
         let id = *id;
 
         match state {
-            AccountEntity::Nonexistent => CmdEffect::reject(WithdrawError::NotFound(id)),
+            AccountEntity::Nonexistent => CommandEffect::reject(WithdrawError::NotFound(id)),
 
             AccountEntity::Existing { balance } if self.amount > *balance => {
-                CmdEffect::reject(WithdrawError::InsufficientBalance(id))
+                CommandEffect::reject(WithdrawError::InsufficientBalance(id))
             }
 
             AccountEntity::Existing { balance } => {
-                let evt = AccountEvt::Withdrawn {
+                let event = AccountEvent::Withdrawn {
                     id,
                     amount: self.amount,
                     balance: balance - self.amount,
                 };
-                CmdEffect::emit_and_reply(evt, move |state| match state {
+                CommandEffect::emit_and_reply(event, move |state| match state {
                     AccountEntity::Nonexistent => {
                         panic!("invalid command Withdraw in state Nonexistent")
                     }

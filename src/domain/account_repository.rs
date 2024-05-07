@@ -1,7 +1,6 @@
 use crate::domain::Account;
 use futures::Stream;
 use std::error::Error as StdError;
-use uuid::Uuid;
 
 #[trait_variant::make(Send)]
 pub trait AccountRepository
@@ -14,6 +13,4 @@ where
     async fn accounts(
         &self,
     ) -> Result<impl Stream<Item = Result<Account, Self::Error>> + Send, Self::Error>;
-
-    async fn account_by_id(&self, id: Uuid) -> Result<Option<Account>, Self::Error>;
 }

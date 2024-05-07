@@ -9,7 +9,7 @@ use axum::{
     routing::get,
     Router, ServiceExt,
 };
-use eventsourced::evt_log::EvtLog;
+use eventsourced::event_log::EventLog;
 use opentelemetry::{global, propagation::Extractor, trace::TraceContextExt};
 use serde::Deserialize;
 use std::{convert::Infallible, net::IpAddr};
@@ -36,16 +36,16 @@ pub struct Config {
 #[openapi()]
 pub struct ApiDoc;
 
-pub async fn serve<R, E>(config: Config, account_repository: R, evt_log: E) -> Result<()>
+pub async fn serve<R, E>(config: Config, account_repository: R, event_log: E) -> Result<()>
 where
     R: AccountRepository,
-    E: EvtLog<Id = Uuid> + Sync,
+    E: EventLog<Id = Uuid> + Sync,
 {
     let Config { addr, port } = config;
 
     let app_state = AppState {
         account_repository,
-        evt_log,
+        event_log,
     };
 
     let mut api_doc = ApiDoc::openapi();
@@ -77,7 +77,7 @@ where
 #[derive(Clone)]
 struct AppState<R, E> {
     account_repository: R,
-    evt_log: E,
+    event_log: E,
 }
 
 #[derive(Clone)]

@@ -1,24 +1,24 @@
-use crate::domain::AccountEvt;
-use eventsourced_projection::postgres::EvtHandler;
+use crate::domain::AccountEvent;
+use eventsourced_projection::postgres::EventHandler;
 use sqlx::{Postgres, QueryBuilder, Transaction};
 use std::iter::once;
 use tracing::{info, instrument};
 use uuid::Uuid;
 
 #[derive(Debug, Clone)]
-pub struct PgAccountEvtHandler;
+pub struct PgAccountEventHandler;
 
-impl EvtHandler<AccountEvt> for PgAccountEvtHandler {
+impl EventHandler<AccountEvent> for PgAccountEventHandler {
     type Error = sqlx::Error;
 
     #[instrument(skip(self, tx))]
-    async fn handle_evt(
+    async fn handle_event(
         &self,
-        evt: AccountEvt,
+        event: AccountEvent,
         tx: &mut Transaction<'static, Postgres>,
     ) -> Result<(), Self::Error> {
-        match evt {
-            AccountEvt::Created { id } => {
+        match event {
+            AccountEvent::Created { id } => {
                 QueryBuilder::new("INSERT INTO account (id, balance) ")
                     .push_values(once(id), |mut q, id| {
                         q.push_bind(id).push_bind(0);
@@ -31,7 +31,7 @@ impl EvtHandler<AccountEvt> for PgAccountEvtHandler {
                 Ok(())
             }
 
-            AccountEvt::Deposited {
+            AccountEvent::Deposited {
                 id,
                 amount,
                 balance,
@@ -42,7 +42,7 @@ impl EvtHandler<AccountEvt> for PgAccountEvtHandler {
                 Ok(())
             }
 
-            AccountEvt::Withdrawn {
+            AccountEvent::Withdrawn {
                 id,
                 balance,
                 amount,

@@ -1,6 +1,6 @@
 use crate::domain::{self, AccountRepository};
 use futures::{Stream, TryStreamExt};
-use sqlx::{prelude::FromRow, PgPool, QueryBuilder};
+use sqlx::{prelude::FromRow, PgPool};
 use tracing::instrument;
 use uuid::Uuid;
 
@@ -26,17 +26,6 @@ impl AccountRepository for PgAccountRepository {
             .fetch(&self.pool)
             .map_ok(domain::Account::from);
         Ok(accounts)
-    }
-
-    #[instrument(skip(self))]
-    async fn account_by_id(&self, id: Uuid) -> Result<Option<domain::Account>, Self::Error> {
-        let account = QueryBuilder::new("SELECT * FROM account WHERE id = ")
-            .push_bind(id)
-            .build_query_as::<Account>()
-            .fetch_optional(&self.pool)
-            .await?;
-        let account = account.map(domain::Account::from);
-        Ok(account)
     }
 }
 
