@@ -13,7 +13,7 @@ use axum::{
 };
 use error_ext::{axum::Error, StdErrorExt};
 use eventsourced::{
-    binarize::serde_json::SerdeJsonBinarize, evt_log::EvtLog,
+    binarize::serde_json::SerdeJsonBinarize, event_log::EventLog,
     snapshot_store::noop::NoopSnapshotStore, EntityRef, EventSourcedExt,
 };
 use futures::TryStreamExt;
@@ -33,7 +33,7 @@ pub struct ApiDoc;
 pub fn app<R, E>() -> Router<AppState<R, E>>
 where
     R: AccountRepository,
-    E: EvtLog<Id = Uuid> + Sync,
+    E: EventLog<Id = Uuid> + Sync,
 {
     Router::new()
         .route("/accounts", get(list_accounts).post(create_accounts))
@@ -61,7 +61,7 @@ async fn list_accounts<R, L>(
 ) -> Result<Json<ListAccountsResponse>, Error>
 where
     R: AccountRepository,
-    L: EvtLog,
+    L: EventLog,
 {
     let accounts = app_state
         .account_repository
@@ -96,11 +96,11 @@ async fn create_accounts<R, L>(
 ) -> Result<(StatusCode, Json<Account>), Error>
 where
     R: AccountRepository,
-    L: EvtLog<Id = Uuid>,
+    L: EventLog<Id = Uuid>,
 {
-    let account = spawn_account_entity(Uuid::now_v7(), app_state.evt_log.clone()).await?;
+    let account = spawn_account_entity(Uuid::now_v7(), app_state.event_log.clone()).await?;
     account
-        .handle_cmd(CreateAccount)
+        .handle_command(CreateAccount)
         .await
         .map_err(|error| {
             error!(
@@ -138,11 +138,11 @@ async fn deposit<R, L>(
 ) -> Result<Json<Account>, Error>
 where
     R: AccountRepository,
-    L: EvtLog<Id = Uuid>,
+    L: EventLog<Id = Uuid>,
 {
-    let account = spawn_account_entity(id, app_state.evt_log.clone()).await?;
+    let account = spawn_account_entity(id, app_state.event_log.clone()).await?;
     account
-        .handle_cmd(Deposit::from(amount))
+        .handle_command(Deposit::from(amount))
         .await
         .map_err(|error| {
             error!(
@@ -181,11 +181,11 @@ async fn withdraw<R, L>(
 ) -> Result<Json<Account>, Error>
 where
     R: AccountRepository,
-    L: EvtLog<Id = Uuid>,
+    L: EventLog<Id = Uuid>,
 {
-    let account = spawn_account_entity(id, app_state.evt_log.clone()).await?;
+    let account = spawn_account_entity(id, app_state.event_log.clone()).await?;
     account
-        .handle_cmd(Withdraw::from(amount))
+        .handle_command(Withdraw::from(amount))
         .await
         .map_err(|error| {
             error!(
@@ -202,9 +202,9 @@ where
 }
 
 // In the real-world, entities would be cached.
-async fn spawn_account_entity<L>(id: Uuid, evt_log: L) -> Result<EntityRef<AccountEntity>, Error>
+async fn spawn_account_entity<L>(id: Uuid, event_log: L) -> Result<EntityRef<AccountEntity>, Error>
 where
-    L: EvtLog<Id = Uuid>,
+    L: EventLog<Id = Uuid>,
 {
     AccountEntity::default()
         .entity()
@@ -212,7 +212,7 @@ where
             id,
             None,
             NonZeroUsize::MIN,
-            evt_log,
+            event_log,
             NoopSnapshotStore::default(),
             SerdeJsonBinarize,
         )

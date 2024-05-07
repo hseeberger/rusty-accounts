@@ -5,14 +5,14 @@ mod util;
 
 use crate::{
     domain::AccountEntity,
-    infra::{PgAccountEvtHandler, PgAccountRepository},
+    infra::{PgAccountEventHandler, PgAccountRepository},
     util::PgConfig,
 };
 use anyhow::{Context, Result};
 use configured::Configured;
 use error_ext::StdErrorExt;
 use eventsourced::EventSourced;
-use eventsourced_nats::{NatsEvtLog, NatsEvtLogConfig};
+use eventsourced_nats::{NatsEventLog, NatsEventLogConfig};
 use eventsourced_projection::postgres::{ErrorStrategy, Projection};
 use opentelemetry::{global, KeyValue};
 use opentelemetry_otlp::WithExportConfig;
@@ -57,7 +57,7 @@ struct Config {
     api: api::Config,
     tracing: TracingConfig,
     pg_config: PgConfig,
-    evt_log: NatsEvtLogConfig,
+    event_log: NatsEventLogConfig,
 }
 
 #[derive(Debug, Clone, Deserialize)]
@@ -136,16 +136,16 @@ async fn run(config: Config) -> Result<()> {
     let account_repository = PgAccountRepository::new(pool.clone());
 
     // Create event log.
-    let evt_log = NatsEvtLog::<Uuid>::new(config.evt_log)
+    let event_log = NatsEventLog::<Uuid>::new(config.event_log)
         .await
-        .context("create NatsEvtLog")?;
+        .context("create NatsEventLog")?;
 
     // Run account projection.
     let account_projection = Projection::new(
         AccountEntity::TYPE_NAME,
         "account".to_string(),
-        evt_log.clone(),
-        PgAccountEvtHandler,
+        event_log.clone(),
+        PgAccountEventHandler,
         ErrorStrategy::Stop,
         pool,
     )
@@ -156,5 +156,5 @@ async fn run(config: Config) -> Result<()> {
         .await
         .context("run account projection")?;
 
-    api::serve(config.api, account_repository, evt_log).await
+    api::serve(config.api, account_repository, event_log).await
 }

@@ -16,9 +16,9 @@ api-version             = { git = "https://github.com/scndcloud/api-version" }
 axum                    = { version = "0.7", features = [ "http2", "json" ] }
 configured              = { version = "0.7" }
 error-ext               = { version = "0.2", features = [ "axum", "utoipa" ] }
-eventsourced            = { version = "0.25", features = [ "serde_json" ] }
-eventsourced-nats       = { version = "0.14" }
-eventsourced-projection = { version = "0.5" }
+eventsourced            = { version = "0.27", features = [ "serde_json" ] }
+eventsourced-nats       = { version = "0.15" }
+eventsourced-projection = { version = "0.6" }
 futures                 = { version = "0.3" }
 opentelemetry           = { version = "0.22" }
 opentelemetry_sdk       = { version = "0.22", features = [ "rt-tokio" ] }
@@ -38,12 +38,11 @@ tracing-opentelemetry   = { version = "0.23" }
 tracing-subscriber      = { version = "0.3", features = [ "env-filter", "json" ] }
 trait-variant           = { version = "0.1" }
 utoipa                  = { version = "4.1", features = [ "axum_extras", "uuid" ] }
-utoipa-swagger-ui       = { version = "6.0", features = [ "axum" ] }
+utoipa-swagger-ui       = { version = "7.0", features = [ "axum", "debug-embed" ] }
 uuid                    = { version = "1.8", features = [ "serde", "v7" ] }
 
 [dev-dependencies]
-assert_matches         = { version = "1.5" }
-eventsourced           = { version = "0.25", features = [ "test" ] }
-testcontainers         = { version = "0.15" }
-testcontainers-modules = { version = "0.3", features = [ "postgres" ] }
+eventsourced           = { version = "0.27", features = [ "test" ] }
+testcontainers         = { version = "0.16" }
+testcontainers-modules = { version = "0.4", features = [ "postgres" ] }
 tracing-test           = { version = "0.2" } # features = [ "no-env-filter" ]
