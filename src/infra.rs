@@ -11,7 +11,7 @@ mod tests {
         infra::{PgAccountEventHandler, PgAccountRepository},
     };
     use error_ext::BoxError;
-    use eventsourced_projection::postgres::EventHandler;
+    use evented::projection::EventHandler;
     use futures::TryStreamExt;
     use sqlx::postgres::{PgConnectOptions, PgPoolOptions};
     use testcontainers::{runners::AsyncRunner, RunnableImage};

@@ -1,5 +1,4 @@
-use crate::domain::account::Account;
-use eventsourced::{Command, CommandEffect, EventSourced};
+use evented::entity::{Command, Entity, EventWithMetadata};
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
 use uuid::Uuid;
@@ -14,19 +13,22 @@ pub enum AccountEntity {
     },
 }
 
-impl EventSourced for AccountEntity {
+impl Entity for AccountEntity {
     type Id = Uuid;
     type Event = AccountEvent;
+    type Metadata = ();
 
     const TYPE_NAME: &'static str = "account";
 
-    fn handle_event(self, event: Self::Event) -> Self {
+    fn handle_event(&mut self, event: Self::Event) {
         match self {
             AccountEntity::Nonexistent => match event {
-                AccountEvent::Created { .. } => AccountEntity::Existing { balance: 0 },
+                AccountEvent::Created { .. } => *self = AccountEntity::Existing { balance: 0 },
+
                 AccountEvent::Deposited { .. } => {
                     panic!("invalid event {event:?} in state Deleted")
                 }
+
                 AccountEvent::Withdrawn { .. } => {
                     panic!("invalid event {event:?} in state Deleted")
                 }
@@ -35,9 +37,13 @@ impl EventSourced for AccountEntity {
             AccountEntity::Existing { .. } => match event {
                 AccountEvent::Created { .. } => panic!("invalid event {event:?} in state Deleted"),
 
-                AccountEvent::Deposited { balance, .. } => AccountEntity::Existing { balance },
+                AccountEvent::Deposited { balance, .. } => {
+                    *self = AccountEntity::Existing { balance }
+                }
 
-                AccountEvent::Withdrawn { balance, .. } => AccountEntity::Existing { balance },
+                AccountEvent::Withdrawn { balance, .. } => {
+                    *self = AccountEntity::Existing { balance }
+                }
             },
         }
     }
@@ -55,34 +61,42 @@ pub enum AccountEvent {
 #[derive(Debug)]
 pub struct CreateAccount;
 
-impl Command<AccountEntity> for CreateAccount {
-    type Reply = Account;
-    type Error = CreateAccountError;
+impl Command for CreateAccount {
+    type Entity = AccountEntity;
+    type Rejection = CreateAccountRejection;
 
-    fn handle_command(
+    async fn handle(
         self,
-        id: &Uuid,
-        state: &AccountEntity,
-    ) -> CommandEffect<AccountEntity, Self::Reply, Self::Error> {
+        id: &<Self::Entity as Entity>::Id,
+        entity: &Self::Entity,
+    ) -> Result<
+        Vec<
+            impl Into<
+                EventWithMetadata<
+                    <Self::Entity as Entity>::Event,
+                    <Self::Entity as Entity>::Metadata,
+                >,
+            >,
+        >,
+        Self::Rejection,
+    > {
         let id = *id;
 
-        match state {
+        match entity {
             AccountEntity::Nonexistent => {
                 let event = AccountEvent::Created { id };
-                CommandEffect::emit_and_reply(event, move |_| Account { id, balance: 0 })
+                Ok(vec![event])
             }
 
-            AccountEntity::Existing { .. } => {
-                CommandEffect::reject(CreateAccountError::AlreadyExisting(id))
-            }
+            AccountEntity::Existing { .. } => Err(CreateAccountRejection::AccountAlreadyExists(id)),
         }
     }
 }
 
 #[derive(Debug, Error)]
-pub enum CreateAccountError {
+pub enum CreateAccountRejection {
     #[error("account with ID {0} already exists")]
-    AlreadyExisting(Uuid),
+    AccountAlreadyExists(Uuid),
 }
 
 // Command: Deposit ================================================================================
@@ -98,19 +112,29 @@ impl From<u64> for Deposit {
     }
 }
 
-impl Command<AccountEntity> for Deposit {
-    type Reply = Account;
-    type Error = DepositError;
+impl Command for Deposit {
+    type Entity = AccountEntity;
+    type Rejection = DepositRejection;
 
-    fn handle_command(
+    async fn handle(
         self,
-        id: &Uuid,
-        state: &AccountEntity,
-    ) -> CommandEffect<AccountEntity, Self::Reply, Self::Error> {
+        id: &<Self::Entity as Entity>::Id,
+        entity: &Self::Entity,
+    ) -> Result<
+        Vec<
+            impl Into<
+                EventWithMetadata<
+                    <Self::Entity as Entity>::Event,
+                    <Self::Entity as Entity>::Metadata,
+                >,
+            >,
+        >,
+        Self::Rejection,
+    > {
         let id = *id;
 
-        match state {
-            AccountEntity::Nonexistent => CommandEffect::reject(DepositError::NotFound(id)),
+        match entity {
+            AccountEntity::Nonexistent => Err(DepositRejection::NotFound(id)),
 
             AccountEntity::Existing { balance } => {
                 let event = AccountEvent::Deposited {
@@ -118,24 +142,14 @@ impl Command<AccountEntity> for Deposit {
                     amount: self.amount,
                     balance: balance + self.amount,
                 };
-
-                CommandEffect::emit_and_reply(event, move |state| match state {
-                    AccountEntity::Nonexistent => {
-                        panic!("invalid command Deposit in state Nonexistent")
-                    }
-
-                    AccountEntity::Existing { balance } => Account {
-                        id,
-                        balance: *balance,
-                    },
-                })
+                Ok(vec![event])
             }
         }
     }
 }
 
 #[derive(Debug, Error)]
-pub enum DepositError {
+pub enum DepositRejection {
     #[error("account with ID {0} not found")]
     NotFound(Uuid),
 }
@@ -153,22 +167,32 @@ impl From<u64> for Withdraw {
     }
 }
 
-impl Command<AccountEntity> for Withdraw {
-    type Reply = Account;
-    type Error = WithdrawError;
+impl Command for Withdraw {
+    type Entity = AccountEntity;
+    type Rejection = WithdrawRejection;
 
-    fn handle_command(
+    async fn handle(
         self,
-        id: &Uuid,
-        state: &AccountEntity,
-    ) -> CommandEffect<AccountEntity, Self::Reply, Self::Error> {
+        id: &<Self::Entity as Entity>::Id,
+        entity: &Self::Entity,
+    ) -> Result<
+        Vec<
+            impl Into<
+                EventWithMetadata<
+                    <Self::Entity as Entity>::Event,
+                    <Self::Entity as Entity>::Metadata,
+                >,
+            >,
+        >,
+        Self::Rejection,
+    > {
         let id = *id;
 
-        match state {
-            AccountEntity::Nonexistent => CommandEffect::reject(WithdrawError::NotFound(id)),
+        match entity {
+            AccountEntity::Nonexistent => Err(WithdrawRejection::NotFound(id)),
 
             AccountEntity::Existing { balance } if self.amount > *balance => {
-                CommandEffect::reject(WithdrawError::InsufficientBalance(id))
+                Err(WithdrawRejection::InsufficientBalance(id))
             }
 
             AccountEntity::Existing { balance } => {
@@ -177,23 +201,14 @@ impl Command<AccountEntity> for Withdraw {
                     amount: self.amount,
                     balance: balance - self.amount,
                 };
-                CommandEffect::emit_and_reply(event, move |state| match state {
-                    AccountEntity::Nonexistent => {
-                        panic!("invalid command Withdraw in state Nonexistent")
-                    }
-
-                    AccountEntity::Existing { balance } => Account {
-                        id,
-                        balance: *balance,
-                    },
-                })
+                Ok(vec![event])
             }
         }
     }
 }
 
 #[derive(Debug, Error)]
-pub enum WithdrawError {
+pub enum WithdrawRejection {
     #[error("account with ID {0} not found")]
     NotFound(Uuid),
 

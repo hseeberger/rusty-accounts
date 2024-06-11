@@ -11,9 +11,11 @@ use crate::{
 use anyhow::{Context, Result};
 use configured::Configured;
 use error_ext::StdErrorExt;
-use eventsourced::EventSourced;
-use eventsourced_nats::{NatsEventLog, NatsEventLogConfig};
-use eventsourced_projection::postgres::{ErrorStrategy, Projection};
+use evented::{
+    entity::Entity,
+    pool::{self, Pool},
+    projection::{ErrorStrategy, Projection},
+};
 use opentelemetry::{global, KeyValue};
 use opentelemetry_otlp::WithExportConfig;
 use opentelemetry_sdk::{propagation::TraceContextPropagator, runtime, trace, Resource};
@@ -26,7 +28,6 @@ use tracing::{error, info, Subscriber};
 use tracing_subscriber::{
     fmt, layer::SubscriberExt, registry::LookupSpan, util::SubscriberInitExt, EnvFilter, Layer,
 };
-use uuid::Uuid;
 
 #[tokio::main]
 async fn main() -> Result<()> {
@@ -57,7 +58,7 @@ struct Config {
     api: api::Config,
     tracing: TracingConfig,
     pg_config: PgConfig,
-    event_log: NatsEventLogConfig,
+    pool: pool::Config,
 }
 
 #[derive(Debug, Clone, Deserialize)]
@@ -135,26 +136,22 @@ async fn run(config: Config) -> Result<()> {
     // Create account repository.
     let account_repository = PgAccountRepository::new(pool.clone());
 
-    // Create event log.
-    let event_log = NatsEventLog::<Uuid>::new(config.event_log)
-        .await
-        .context("create NatsEventLog")?;
+    // Create pool.
+    let pool = Pool::new(config.pool).await.context("create pool")?;
 
     // Run account projection.
-    let account_projection = Projection::new(
+    let account_projection = Projection::by_type_name(
         AccountEntity::TYPE_NAME,
         "account".to_string(),
-        event_log.clone(),
         PgAccountEventHandler,
         ErrorStrategy::Stop,
-        pool,
+        pool.clone(),
     )
-    .await
-    .context("create account projection")?;
+    .await;
     account_projection
         .run()
         .await
         .context("run account projection")?;
 
-    api::serve(config.api, account_repository, event_log).await
+    api::serve(config.api, account_repository, pool).await
 }

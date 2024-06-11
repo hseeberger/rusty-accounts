@@ -1,8 +1,8 @@
 use crate::{
     api::AppState,
     domain::{
-        Account, AccountEntity, AccountRepository, CreateAccount, CreateAccountError, Deposit,
-        DepositError, Withdraw, WithdrawError,
+        Account, AccountEntity, AccountRepository, CreateAccount, CreateAccountRejection, Deposit,
+        DepositRejection, Withdraw, WithdrawRejection,
     },
 };
 use axum::{
@@ -12,13 +12,12 @@ use axum::{
     Json, Router,
 };
 use error_ext::{axum::Error, StdErrorExt};
-use eventsourced::{
-    binarize::serde_json::SerdeJsonBinarize, event_log::EventLog,
-    snapshot_store::noop::NoopSnapshotStore, EntityRef, EventSourcedExt,
+use evented::{
+    entity::{EntityExt, EventSourcedEntity, NoOpEventListener},
+    pool::Pool,
 };
 use futures::TryStreamExt;
 use serde::{Deserialize, Serialize};
-use std::num::NonZeroUsize;
 use tracing::{error, instrument};
 use utoipa::{OpenApi, ToSchema};
 use uuid::Uuid;
@@ -30,10 +29,9 @@ use uuid::Uuid;
 )]
 pub struct ApiDoc;
 
-pub fn app<R, E>() -> Router<AppState<R, E>>
+pub fn app<R>() -> Router<AppState<R>>
 where
     R: AccountRepository,
-    E: EventLog<Id = Uuid> + Sync,
 {
     Router::new()
         .route("/accounts", get(list_accounts).post(create_accounts))
@@ -56,12 +54,11 @@ struct ListAccountsResponse {
     tag = "account",
 )]
 #[instrument(skip(app_state))]
-async fn list_accounts<R, L>(
-    State(app_state): State<AppState<R, L>>,
+async fn list_accounts<R>(
+    State(app_state): State<AppState<R>>,
 ) -> Result<Json<ListAccountsResponse>, Error>
 where
     R: AccountRepository,
-    L: EventLog,
 {
     let accounts = app_state
         .account_repository
@@ -91,14 +88,14 @@ where
     tag = "account",
 )]
 #[instrument(skip(app_state))]
-async fn create_accounts<R, L>(
-    State(app_state): State<AppState<R, L>>,
+async fn create_accounts<R>(
+    State(app_state): State<AppState<R>>,
 ) -> Result<(StatusCode, Json<Account>), Error>
 where
     R: AccountRepository,
-    L: EventLog<Id = Uuid>,
 {
-    let account = spawn_account_entity(Uuid::now_v7(), app_state.event_log.clone()).await?;
+    let id = Uuid::now_v7();
+    let mut account = spawn_account_entity(id, app_state.pool.clone()).await?;
     account
         .handle_command(CreateAccount)
         .await
@@ -110,9 +107,19 @@ where
             Error::Internal
         })?
         .map_err(|error| match error {
-            CreateAccountError::AlreadyExisting(_) => Error::conflict(error),
+            CreateAccountRejection::AccountAlreadyExists(_) => Error::conflict(error),
         })
-        .map(|account| (StatusCode::CREATED, Json(account)))
+        .map(|account| match account {
+            AccountEntity::Nonexistent => panic!("invalid entity {account:?}"),
+
+            AccountEntity::Existing { balance } => {
+                let account = Account {
+                    id,
+                    balance: *balance,
+                };
+                (StatusCode::CREATED, Json(account))
+            }
+        })
 }
 
 #[derive(Debug, Deserialize, ToSchema)]
@@ -131,16 +138,15 @@ struct DepositRequest {
     tag = "account",
 )]
 #[instrument(skip(app_state))]
-async fn deposit<R, L>(
-    State(app_state): State<AppState<R, L>>,
+async fn deposit<R>(
+    State(app_state): State<AppState<R>>,
     Path(id): Path<Uuid>,
     Json(DepositRequest { amount }): Json<DepositRequest>,
 ) -> Result<Json<Account>, Error>
 where
     R: AccountRepository,
-    L: EventLog<Id = Uuid>,
 {
-    let account = spawn_account_entity(id, app_state.event_log.clone()).await?;
+    let mut account = spawn_account_entity(id, app_state.pool).await?;
     account
         .handle_command(Deposit::from(amount))
         .await
@@ -152,9 +158,19 @@ where
             Error::Internal
         })?
         .map_err(|error| match error {
-            DepositError::NotFound(_) => Error::not_found(error),
+            DepositRejection::NotFound(_) => Error::not_found(error),
         })
-        .map(Json)
+        .map(|account| match account {
+            AccountEntity::Nonexistent => panic!("invalid entity {account:?}"),
+
+            AccountEntity::Existing { balance } => {
+                let account = Account {
+                    id,
+                    balance: *balance,
+                };
+                Json(account)
+            }
+        })
 }
 
 #[derive(Debug, Deserialize, ToSchema)]
@@ -174,16 +190,15 @@ struct WithdrawRequest {
     tag = "account",
 )]
 #[instrument(skip(app_state))]
-async fn withdraw<R, L>(
-    State(app_state): State<AppState<R, L>>,
+async fn withdraw<R>(
+    State(app_state): State<AppState<R>>,
     Path(id): Path<Uuid>,
     Json(WithdrawRequest { amount }): Json<WithdrawRequest>,
 ) -> Result<Json<Account>, Error>
 where
     R: AccountRepository,
-    L: EventLog<Id = Uuid>,
 {
-    let account = spawn_account_entity(id, app_state.event_log.clone()).await?;
+    let mut account = spawn_account_entity(id, app_state.pool.clone()).await?;
     account
         .handle_command(Withdraw::from(amount))
         .await
@@ -195,30 +210,33 @@ where
             Error::Internal
         })?
         .map_err(|error| match error {
-            WithdrawError::NotFound(_) => Error::not_found(error),
-            WithdrawError::InsufficientBalance(_) => Error::invalid_entity(error),
+            WithdrawRejection::NotFound(_) => Error::not_found(error),
+            WithdrawRejection::InsufficientBalance(_) => Error::invalid_entity(error),
         })
-        .map(Json)
+        .map(|account| match account {
+            AccountEntity::Nonexistent => panic!("invalid entity {account:?}"),
+
+            AccountEntity::Existing { balance } => {
+                let account = Account {
+                    id,
+                    balance: *balance,
+                };
+                Json(account)
+            }
+        })
 }
 
 // In the real-world, entities would be cached.
-async fn spawn_account_entity<L>(id: Uuid, event_log: L) -> Result<EntityRef<AccountEntity>, Error>
-where
-    L: EventLog<Id = Uuid>,
-{
+async fn spawn_account_entity(
+    id: Uuid,
+    pool: Pool,
+) -> Result<EventSourcedEntity<AccountEntity, NoOpEventListener>, Error> {
     AccountEntity::default()
         .entity()
-        .spawn(
-            id,
-            None,
-            NonZeroUsize::MIN,
-            event_log,
-            NoopSnapshotStore::default(),
-            SerdeJsonBinarize,
-        )
+        .build(id, pool)
         .await
         .map_err(|error| {
-            error!(error = error.as_chain(), "cannot spawn AccountEntity");
+            error!(error = error.as_chain(), "cannot build AccountEntity");
             Error::Internal
         })
 }

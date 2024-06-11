@@ -9,7 +9,7 @@ use axum::{
     routing::get,
     Router, ServiceExt,
 };
-use eventsourced::event_log::EventLog;
+use evented::pool::Pool;
 use opentelemetry::{global, propagation::Extractor, trace::TraceContextExt};
 use serde::Deserialize;
 use std::{convert::Infallible, net::IpAddr};
@@ -23,7 +23,6 @@ use tracing::{field, info_span, warn, Span};
 use tracing_opentelemetry::OpenTelemetrySpanExt;
 use utoipa::OpenApi;
 use utoipa_swagger_ui::SwaggerUi;
-use uuid::Uuid;
 
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "kebab-case")]
@@ -36,16 +35,15 @@ pub struct Config {
 #[openapi()]
 pub struct ApiDoc;
 
-pub async fn serve<R, E>(config: Config, account_repository: R, event_log: E) -> Result<()>
+pub async fn serve<R>(config: Config, account_repository: R, pool: Pool) -> Result<()>
 where
     R: AccountRepository,
-    E: EventLog<Id = Uuid> + Sync,
 {
     let Config { addr, port } = config;
 
     let app_state = AppState {
         account_repository,
-        event_log,
+        pool,
     };
 
     let mut api_doc = ApiDoc::openapi();
@@ -75,9 +73,9 @@ where
 }
 
 #[derive(Clone)]
-struct AppState<R, E> {
+struct AppState<R> {
     account_repository: R,
-    event_log: E,
+    pool: Pool,
 }
 
 #[derive(Clone)]
