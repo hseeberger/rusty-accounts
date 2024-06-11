@@ -1,5 +1,5 @@
 use crate::domain::AccountEvent;
-use eventsourced_projection::postgres::EventHandler;
+use evented::projection::EventHandler;
 use sqlx::{Postgres, QueryBuilder, Transaction};
 use std::iter::once;
 use tracing::{info, instrument};

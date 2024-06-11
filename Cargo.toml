@@ -11,38 +11,35 @@ repository    = "https://github.com/hseeberger/rusty-accounts"
 documentation = "https://github.com/hseeberger/rusty-accounts"
 
 [dependencies]
-anyhow                  = { version = "1.0" }
-api-version             = { git = "https://github.com/scndcloud/api-version" }
-axum                    = { version = "0.7", features = [ "http2", "json" ] }
-configured              = { version = "0.7" }
-error-ext               = { version = "0.2", features = [ "axum", "utoipa" ] }
-eventsourced            = { version = "0.27", features = [ "serde_json" ] }
-eventsourced-nats       = { version = "0.15" }
-eventsourced-projection = { version = "0.6" }
-futures                 = { version = "0.3" }
-opentelemetry           = { version = "0.23" }
-opentelemetry_sdk       = { version = "0.23", features = [ "rt-tokio" ] }
-opentelemetry-otlp      = { version = "0.16", default-features = false, features = [ "grpc-tonic", "trace" ] }
-secrecy                 = { version = "0.8", features = [ "serde" ] }
-serde                   = { version = "1.0", features = [ "derive" ] }
-serde_json              = { version = "1.0" }
-serde_with              = { version = "3.8" }
-sqlx                    = { version = "0.7", default-features = false, features = [ "migrate", "postgres", "runtime-tokio", "uuid" ] }
-thiserror               = { version = "1.0" }
-time                    = { version = "0.3", features = [ "formatting" ] }
-tokio                   = { version = "1", features = [ "macros", "rt-multi-thread", "signal" ] }
-tower                   = { version = "0.4" }
-tower-http              = { version = "0.5", features = [ "cors", "trace" ] }
-tracing                 = { version = "0.1" }
-tracing-opentelemetry   = { version = "0.24" }
-tracing-subscriber      = { version = "0.3", features = [ "env-filter", "json" ] }
-trait-variant           = { version = "0.1" }
-utoipa                  = { version = "4.2", features = [ "axum_extras", "uuid" ] }
-utoipa-swagger-ui       = { version = "7.1", features = [ "axum", "debug-embed" ] }
-uuid                    = { version = "1.8", features = [ "serde", "v7" ] }
+anyhow                = { version = "1.0" }
+api-version           = { git = "https://github.com/scndcloud/api-version" }
+axum                  = { version = "0.7", features = [ "http2", "json" ] }
+configured            = { version = "0.7" }
+error-ext             = { version = "0.2", features = [ "axum", "utoipa" ] }
+evented               = { version = "0.2" }
+futures               = { version = "0.3" }
+opentelemetry         = { version = "0.23" }
+opentelemetry_sdk     = { version = "0.23", features = [ "rt-tokio" ] }
+opentelemetry-otlp    = { version = "0.16", default-features = false, features = [ "grpc-tonic", "trace" ] }
+secrecy               = { version = "0.8", features = [ "serde" ] }
+serde                 = { version = "1.0", features = [ "derive" ] }
+serde_json            = { version = "1.0" }
+serde_with            = { version = "3.8" }
+sqlx                  = { version = "0.7", default-features = false, features = [ "macros", "migrate", "postgres", "runtime-tokio", "uuid" ] }
+thiserror             = { version = "1.0" }
+time                  = { version = "0.3", features = [ "formatting" ] }
+tokio                 = { version = "1", features = [ "macros", "rt-multi-thread", "signal" ] }
+tower                 = { version = "0.4" }
+tower-http            = { version = "0.5", features = [ "cors", "trace" ] }
+tracing               = { version = "0.1" }
+tracing-opentelemetry = { version = "0.24" }
+tracing-subscriber    = { version = "0.3", features = [ "env-filter", "json" ] }
+trait-variant         = { version = "0.1" }
+utoipa                = { version = "4.2", features = [ "axum_extras", "uuid" ] }
+utoipa-swagger-ui     = { version = "7.1", features = [ "axum", "debug-embed" ] }
+uuid                  = { version = "1.8", features = [ "serde", "v7" ] }
 
 [dev-dependencies]
-eventsourced           = { version = "0.27", features = [ "test" ] }
 testcontainers         = { version = "0.17" }
 testcontainers-modules = { version = "0.5", features = [ "postgres" ] }
 tracing-test           = { version = "0.2" } # features = [ "no-env-filter" ]
