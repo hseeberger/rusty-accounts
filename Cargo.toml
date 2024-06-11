@@ -20,21 +20,21 @@ eventsourced            = { version = "0.27", features = [ "serde_json" ] }
 eventsourced-nats       = { version = "0.15" }
 eventsourced-projection = { version = "0.6" }
 futures                 = { version = "0.3" }
-opentelemetry           = { version = "0.22" }
-opentelemetry_sdk       = { version = "0.22", features = [ "rt-tokio" ] }
-opentelemetry-otlp      = { version = "0.15", default-features = false, features = [ "grpc-tonic", "trace" ] }
+opentelemetry           = { version = "0.23" }
+opentelemetry_sdk       = { version = "0.23", features = [ "rt-tokio" ] }
+opentelemetry-otlp      = { version = "0.16", default-features = false, features = [ "grpc-tonic", "trace" ] }
 secrecy                 = { version = "0.8", features = [ "serde" ] }
 serde                   = { version = "1.0", features = [ "derive" ] }
 serde_json              = { version = "1.0" }
 serde_with              = { version = "3.8" }
-sqlx                    = { version = "0.7", features = [ "migrate", "postgres", "runtime-tokio", "uuid" ] }
+sqlx                    = { version = "0.7", default-features = false, features = [ "migrate", "postgres", "runtime-tokio", "uuid" ] }
 thiserror               = { version = "1.0" }
 time                    = { version = "0.3", features = [ "formatting" ] }
 tokio                   = { version = "1", features = [ "macros", "rt-multi-thread", "signal" ] }
 tower                   = { version = "0.4" }
 tower-http              = { version = "0.5", features = [ "cors", "trace" ] }
 tracing                 = { version = "0.1" }
-tracing-opentelemetry   = { version = "0.23" }
+tracing-opentelemetry   = { version = "0.24" }
 tracing-subscriber      = { version = "0.3", features = [ "env-filter", "json" ] }
 trait-variant           = { version = "0.1" }
 utoipa                  = { version = "4.2", features = [ "axum_extras", "uuid" ] }
