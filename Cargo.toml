@@ -39,7 +39,7 @@ tracing-subscriber      = { version = "0.3", features = [ "env-filter", "json" ]
 trait-variant           = { version = "0.1" }
 utoipa                  = { version = "4.2", features = [ "axum_extras", "uuid" ] }
 utoipa-swagger-ui       = { version = "7.1", features = [ "axum", "debug-embed" ] }
-uuid                    = { version = "1.9", features = [ "serde", "v7" ] }
+uuid                    = { version = "1.10", features = [ "serde", "v7" ] }
 
 [dev-dependencies]
 eventsourced           = { version = "0.27", features = [ "test" ] }
